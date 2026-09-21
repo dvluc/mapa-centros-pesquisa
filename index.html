@@ -319,17 +319,10 @@ async function carregaDados() {
       estado.fonte = "planilha";
       return regs;
     } catch (erro) {
-      const d = document.createElement("div");
-      d.appendChild(texto("strong", "", "O site não conseguiu ler a planilha. "));
-      d.appendChild(document.createTextNode(
-        "Está mostrando a cópia local, que pode estar desatualizada. Verifique se a planilha está compartilhada como \"qualquer pessoa com o link\" na função de leitor, e se o identificador em config.js está correto. Detalhe técnico: " + erro.message + "."));
-      mostraFaixa(d, true);
+      // A cópia local cobre a falha, então o visitante não precisa ver um alerta.
+      // Quem mantém o site encontra o motivo no console.
+      console.warn("Não foi possível ler a planilha, usando a cópia local em " + (CFG.CSV_LOCAL || "dados/atores.csv") + ".", erro);
     }
-  } else {
-    const d = document.createElement("div");
-    d.appendChild(texto("strong", "", "Planilha ainda não configurada. "));
-    d.appendChild(document.createTextNode("O site está usando a cópia local em dados/atores.csv. Para ligar à planilha, preencha o identificador em config.js."));
-    mostraFaixa(d, false);
   }
   const txt = await buscaTexto(CFG.CSV_LOCAL || "dados/atores.csv");
   estado.fonte = "cópia local";
