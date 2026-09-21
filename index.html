@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mapa de Atores CGINA</title>
+<meta name="description" content="Centros, laboratórios e núcleos brasileiros de referência em ciência de dados, políticas públicas e divulgação científica.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --plane: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #efeee9;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --hairline: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.06);
+  --dados: #2a78d6;
+  --politicas: #eb6834;
+  --divulgacao: #1baf7a;
+  --foco: #2a78d6;
+  --aviso: #fab219;
+  --erro: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232322;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --hairline: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --shadow: none;
+    --dados: #3987e5;
+    --politicas: #d95926;
+    --divulgacao: #199e70;
+    --foco: #3987e5;
+    --aviso: #fab219;
+    --erro: #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #232322;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --hairline: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --shadow: none;
+  --dados: #3987e5;
+  --politicas: #d95926;
+  --divulgacao: #199e70;
+  --foco: #3987e5;
+  --aviso: #fab219;
+  --erro: #e66767;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--plane);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  padding-inline: 16px;
+  padding-block: 0 24px;
+  max-width: 1440px;
+  margin-inline: auto;
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 600; }
+img { max-width: 100%; }
+a { color: inherit; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+.eyebrow { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+
+.topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; padding-block: 20px 12px; border-bottom: 1px solid var(--hairline); }
+.topo h1 { font-size: 22px; line-height: 1.2; }
+.topo p { margin: 4px 0 0; color: var(--ink-2); max-width: 64ch; }
+.topo .meta { color: var(--muted); font-size: 12px; text-align: right; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.recarregar { background: var(--surface); border: 1px solid var(--axis); border-radius: 5px; padding: 5px 10px; cursor: pointer; color: var(--ink-2); min-height: 32px; }
+.recarregar:hover { color: var(--ink); }
+.recarregar[disabled] { opacity: 0.5; cursor: default; }
+
+.faixa { display: none; gap: 8px; align-items: flex-start; border: 1px solid var(--border); border-left: 4px solid var(--aviso); background: var(--surface); border-radius: 6px; padding: 10px 12px; margin-top: 14px; font-size: 13px; color: var(--ink-2); }
+.faixa.visivel { display: flex; }
+.faixa.erro { border-left-color: var(--erro); }
+.faixa strong { color: var(--ink); font-weight: 600; }
+
+.numeros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding-block: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tile .valor { font-size: 28px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .rotulo { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; }
+.tile .sub { color: var(--muted); font-size: 12px; }
+.ponto { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
+.ponto.dados { background: var(--dados); }
+.ponto.politicas { background: var(--politicas); }
+.ponto.divulgacao { background: var(--divulgacao); }
+
+.filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding-block: 4px 14px; }
+.filtros label { display: flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 13px; }
+.filtros select, .filtros input[type="search"] { background: var(--surface); border: 1px solid var(--axis); border-radius: 5px; padding: 6px 8px; min-height: 34px; }
+.filtros input[type="search"] { min-width: 220px; flex: 1 1 220px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--axis); background: var(--surface); border-radius: 999px; padding: 5px 11px 5px 8px; cursor: pointer; color: var(--ink-2); min-height: 34px; }
+.chip[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); }
+.chip[aria-pressed="false"] .ponto { opacity: 0.3; }
+.limpar { background: none; border: none; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 6px 4px; }
+.limpar:hover { color: var(--ink); }
+
+.grade { display: grid; grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr); gap: 16px; align-items: start; }
+.cartao-mapa { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative; }
+#mapa { height: 70vh; min-height: 440px; background: var(--surface); }
+.leaflet-container { font: inherit; background: var(--surface); }
+.leaflet-bar { border: 1px solid var(--border) !important; box-shadow: var(--shadow) !important; }
+.leaflet-bar a { background: var(--surface) !important; color: var(--ink) !important; border-bottom-color: var(--hairline) !important; }
+.leaflet-tooltip { background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--shadow); font-size: 12px; padding: 6px 8px; }
+.leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before, .leaflet-tooltip-left:before, .leaflet-tooltip-right:before { display: none; }
+.leaflet-popup-content-wrapper { background: var(--surface); color: var(--ink); border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
+.leaflet-popup-tip { background: var(--surface); }
+.leaflet-popup-content { margin: 12px 14px; font-size: 13px; line-height: 1.4; }
+.leaflet-popup-content strong { display: block; font-size: 14px; margin-bottom: 2px; }
+.leaflet-popup-content .sec { color: var(--ink-2); }
+.leaflet-popup-content a { color: var(--foco); }
+.leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+.legenda { position: absolute; left: 10px; bottom: 10px; z-index: 500; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--ink-2); }
+.legenda div { display: flex; align-items: center; gap: 7px; }
+.legenda .nota { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+.lista-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 0 2px 8px; }
+.lista-cab .contagem { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+#lista { display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow-y: auto; padding-right: 2px; }
+.ator { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--axis); border-radius: 6px; padding: 10px 12px; display: grid; gap: 4px; cursor: pointer; }
+.ator.dados { border-left-color: var(--dados); }
+.ator.politicas { border-left-color: var(--politicas); }
+.ator.divulgacao { border-left-color: var(--divulgacao); }
+.ator.ativo { outline: 2px solid var(--foco); outline-offset: 1px; }
+.ator .linha1 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.ator h3 { font-size: 14px; line-height: 1.3; }
+.ator .inst { color: var(--ink-2); font-size: 13px; }
+.ator .local { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.ator .resp { font-size: 13px; }
+.ator .resp span { color: var(--ink-2); }
+.ator .contato { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); }
+.ator .contato a { color: var(--foco); text-decoration: none; }
+.ator .contato a:hover { text-decoration: underline; }
+.ator .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.tag { font-size: 11px; color: var(--muted); border: 1px solid var(--hairline); border-radius: 4px; padding: 1px 6px; }
+.tag.parcial { color: var(--ink-2); border-style: dashed; }
+.ator .temas { color: var(--ink-2); font-size: 12px; display: none; }
+.ator.ativo .temas { display: block; }
+.vazio { color: var(--muted); padding: 24px; text-align: center; }
+.rodape { color: var(--muted); font-size: 12px; padding-block: 16px 0; border-top: 1px solid var(--hairline); margin-top: 16px; max-width: 90ch; }
+.rodape a { color: var(--foco); }
+
+@media (max-width: 900px) {
+  .numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grade { grid-template-columns: 1fr; }
+  #mapa { height: 55vh; min-height: 360px; }
+  #lista { max-height: none; }
+  .topo .meta { text-align: left; align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) { .leaflet-zoom-anim .leaflet-zoom-animated { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div>
+    <div class="eyebrow">CAPES, DICE, CGINA</div>
+    <h1>Mapa de atores acadêmicos correlatos à CGINA</h1>
+    <p>Centros, laboratórios, núcleos e institutos de referência em ciência de dados, políticas públicas e divulgação científica, com responsável e contato institucional.</p>
+  </div>
+  <div class="meta">
+    <span id="meta-fonte">Carregando dados</span>
+    <button class="recarregar" id="btn-recarregar" type="button">Recarregar dados</button>
+  </div>
+</header>
+
+<div class="faixa" id="faixa" role="status"></div>
+
+<section class="numeros" aria-label="Totais">
+  <div class="tile"><div class="valor" id="n-total">0</div><div class="rotulo">Unidades no recorte</div><div class="sub" id="n-sub"></div></div>
+  <div class="tile"><div class="valor" id="n-dados">0</div><div class="rotulo"><span class="ponto dados"></span>Ciência de dados</div></div>
+  <div class="tile"><div class="valor" id="n-politicas">0</div><div class="rotulo"><span class="ponto politicas"></span>Políticas públicas</div></div>
+  <div class="tile"><div class="valor" id="n-divulgacao">0</div><div class="rotulo"><span class="ponto divulgacao"></span>Divulgação científica</div></div>
+</section>
+
+<section class="filtros" aria-label="Filtros">
+  <div class="chips" role="group" aria-label="Área principal">
+    <button class="chip" data-area="ciencia_de_dados" aria-pressed="true"><span class="ponto dados"></span>Ciência de dados</button>
+    <button class="chip" data-area="politicas_publicas" aria-pressed="true"><span class="ponto politicas"></span>Políticas públicas</button>
+    <button class="chip" data-area="divulgacao_cientifica" aria-pressed="true"><span class="ponto divulgacao"></span>Divulgação científica</button>
+  </div>
+  <label>Natureza <select id="f-natureza"><option value="">todas</option></select></label>
+  <label>Região <select id="f-regiao"><option value="">todas</option></select></label>
+  <label>UF <select id="f-uf"><option value="">todas</option></select></label>
+  <input type="search" id="f-busca" placeholder="Buscar por nome, sigla, instituição, tema ou responsável" aria-label="Buscar">
+  <button class="limpar" id="f-limpar" type="button">Limpar filtros</button>
+</section>
+
+<section class="grade">
+  <div class="cartao-mapa">
+    <div id="mapa" role="region" aria-label="Mapa do Brasil com os atores mapeados"></div>
+    <div class="legenda" aria-hidden="true">
+      <div><span class="ponto dados"></span>Ciência de dados</div>
+      <div><span class="ponto politicas"></span>Políticas públicas</div>
+      <div><span class="ponto divulgacao"></span>Divulgação científica</div>
+      <div class="nota">Passe o cursor sobre um estado para ver o total.</div>
+    </div>
+  </div>
+  <div>
+    <div class="lista-cab"><h2 style="font-size:15px">Unidades</h2><span class="contagem" id="lista-contagem"></span></div>
+    <div id="lista" aria-live="polite"></div>
+  </div>
+</section>
+
+<footer class="rodape">
+  Fontes: páginas oficiais das unidades e das universidades. Contatos são apenas os institucionais publicados. Coordenadas do endereço da unidade quando publicado, senão do campus ou da cidade, conforme o campo de precisão de cada ficha. Malha de estados do <a href="https://servicodados.ibge.gov.br/api/docs/malhas" target="_blank" rel="noopener">IBGE</a>. Unidades com verificação parcial estão marcadas e devem ser confirmadas antes de contato.
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="config.js"></script>
+<script>
+"use strict";
+
+const COD_UF = {"11":"RO","12":"AC","13":"AM","14":"RR","15":"PA","16":"AP","17":"TO","21":"MA","22":"PI","23":"CE","24":"RN","25":"PB","26":"PE","27":"AL","28":"SE","29":"BA","31":"MG","32":"ES","33":"RJ","35":"SP","41":"PR","42":"SC","43":"RS","50":"MS","51":"MT","52":"GO","53":"DF"};
+const NOME_UF = {"AC":"Acre","AL":"Alagoas","AP":"Amapá","AM":"Amazonas","BA":"Bahia","CE":"Ceará","DF":"Distrito Federal","ES":"Espírito Santo","GO":"Goiás","MA":"Maranhão","MT":"Mato Grosso","MS":"Mato Grosso do Sul","MG":"Minas Gerais","PA":"Pará","PB":"Paraíba","PR":"Paraná","PE":"Pernambuco","PI":"Piauí","RJ":"Rio de Janeiro","RN":"Rio Grande do Norte","RS":"Rio Grande do Sul","RO":"Rondônia","RR":"Roraima","SC":"Santa Catarina","SP":"São Paulo","SE":"Sergipe","TO":"Tocantins"};
+const REGIAO_UF = {};
+[["Norte",["AC","AP","AM","PA","RO","RR","TO"]],["Nordeste",["AL","BA","CE","MA","PB","PE","PI","RN","SE"]],["Centro-Oeste",["DF","GO","MT","MS"]],["Sudeste",["ES","MG","RJ","SP"]],["Sul",["PR","RS","SC"]]]
+  .forEach(([reg, ufs]) => ufs.forEach(u => REGIAO_UF[u] = reg));
+const CLASSE_AREA = {"ciencia_de_dados":"dados","politicas_publicas":"politicas","divulgacao_cientifica":"divulgacao"};
+const ROTULO_AREA = {"ciencia_de_dados":"ciência de dados","politicas_publicas":"políticas públicas","divulgacao_cientifica":"divulgação científica"};
+const ORDEM_REGIAO = ["Norte","Nordeste","Centro-Oeste","Sudeste","Sul"];
+const CFG = window.CONFIG || {};
+
+const el = (id) => document.getElementById(id);
+const cor = (nome) => getComputedStyle(document.documentElement).getPropertyValue(nome).trim();
+const texto = (tag, cls, conteudo) => { const e = document.createElement(tag); if (cls) e.className = cls; if (conteudo !== undefined) e.textContent = conteudo; return e; };
+const normaliza = (t) => (t || "").toString().normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+// ---------- Leitura de CSV ----------
+// Implementação própria porque o conteúdo tem vírgula, aspas e quebra de linha dentro de campo.
+function leCSV(txt) {
+  const linhas = [];
+  let campo = "", linha = [], aspas = false;
+  txt = txt.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  for (let i = 0; i < txt.length; i++) {
+    const c = txt[i];
+    if (aspas) {
+      if (c === '"') { if (txt[i + 1] === '"') { campo += '"'; i++; } else aspas = false; }
+      else campo += c;
+    } else if (c === '"') aspas = true;
+    else if (c === ",") { linha.push(campo); campo = ""; }
+    else if (c === "\n") { linha.push(campo); linhas.push(linha); linha = []; campo = ""; }
+    else campo += c;
+  }
+  if (campo !== "" || linha.length) { linha.push(campo); linhas.push(linha); }
+  if (!linhas.length) return [];
+  const cab = linhas[0].map(h => h.trim());
+  return linhas.slice(1)
+    .filter(l => l.some(v => v.trim() !== ""))
+    .map(l => Object.fromEntries(cab.map((h, i) => [h, (l[i] || "").trim()])));
+}
+
+// ---------- Estado ----------
+const estado = {
+  registros: [],
+  fonte: "",
+  carregadoEm: null,
+  areas: new Set(["ciencia_de_dados", "politicas_publicas", "divulgacao_cientifica"]),
+  natureza: "", regiao: "", uf: "", busca: "",
+};
+
+function mostraFaixa(html, erro) {
+  const f = el("faixa");
+  f.replaceChildren();
+  f.appendChild(html);
+  f.classList.add("visivel");
+  f.classList.toggle("erro", !!erro);
+}
+function escondeFaixa() { el("faixa").classList.remove("visivel"); }
+
+// ---------- Fontes de dados ----------
+function urlPlanilha() {
+  if (!CFG.PLANILHA_ID) return null;
+  const aba = CFG.PLANILHA_ABA ? "&sheet=" + encodeURIComponent(CFG.PLANILHA_ABA) : "";
+  // O parâmetro de tempo evita que o navegador sirva uma resposta antiga do cache.
+  return `https://docs.google.com/spreadsheets/d/${CFG.PLANILHA_ID}/gviz/tq?tqx=out:csv${aba}&t=${Date.now()}`;
+}
+
+async function buscaTexto(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.text();
+}
+
+async function carregaDados() {
+  const alvo = urlPlanilha();
+  if (alvo) {
+    try {
+      const txt = await buscaTexto(alvo);
+      const regs = prepara(leCSV(txt));
+      if (!regs.length) throw new Error("planilha sem linhas utilizáveis");
+      estado.fonte = "planilha";
+      return regs;
+    } catch (erro) {
+      const d = document.createElement("div");
+      d.appendChild(texto("strong", "", "O site não conseguiu ler a planilha. "));
+      d.appendChild(document.createTextNode(
+        "Está mostrando a cópia local, que pode estar desatualizada. Verifique se a planilha está compartilhada como \"qualquer pessoa com o link\" na função de leitor, e se o identificador em config.js está correto. Detalhe técnico: " + erro.message + "."));
+      mostraFaixa(d, true);
+    }
+  } else {
+    const d = document.createElement("div");
+    d.appendChild(texto("strong", "", "Planilha ainda não configurada. "));
+    d.appendChild(document.createTextNode("O site está usando a cópia local em dados/atores.csv. Para ligar à planilha, preencha o identificador em config.js."));
+    mostraFaixa(d, false);
+  }
+  const txt = await buscaTexto(CFG.CSV_LOCAL || "dados/atores.csv");
+  estado.fonte = "cópia local";
+  return prepara(leCSV(txt));
+}
+
+// ---------- Preparo dos registros ----------
+function prepara(brutos) {
+  const regs = [];
+  brutos.forEach((b, i) => {
+    const publicar = (b.publicar || "sim").toLowerCase();
+    if (["nao", "não", "n", "0", "false"].includes(publicar)) return;
+    if (!b.nome) return;
+    const uf = (b.uf || "").toUpperCase().slice(0, 2);
+    const lat = parseFloat((b.latitude || "").replace(",", "."));
+    const lon = parseFloat((b.longitude || "").replace(",", "."));
+    const area = (b.area_principal || "").toLowerCase();
+    regs.push({
+      idx: i,
+      nome: b.nome,
+      sigla: b.sigla || "",
+      tipo_unidade: b.tipo_unidade || "",
+      instituicao: b.instituicao || "",
+      sigla_instituicao: b.sigla_instituicao || "",
+      natureza_instituicao: b.natureza_instituicao || "",
+      unidade_vinculacao: b.unidade_vinculacao || "",
+      area_principal: CLASSE_AREA[area] ? area : "",
+      areas_secundarias: b.areas_secundarias || "",
+      responsavel_nome: b.responsavel_nome || "",
+      responsavel_cargo: b.responsavel_cargo || "",
+      email_contato: b.email_contato || "",
+      telefone_contato: b.telefone_contato || "",
+      url: b.url || "",
+      endereco: b.endereco || "",
+      cidade: b.cidade || "",
+      uf: uf,
+      regiao: REGIAO_UF[uf] || "",
+      lat: Number.isFinite(lat) ? lat : null,
+      lon: Number.isFinite(lon) ? lon : null,
+      precisao_geo: (b.precisao_geo || "").toLowerCase(),
+      temas_correlatos_cgina: b.temas_correlatos_cgina || "",
+      grau_verificacao: (b.grau_verificacao || "").toLowerCase(),
+      data_verificacao: b.data_verificacao || "",
+    });
+  });
+  return regs;
+}
+
+// Afasta pontos coincidentes, para que todos fiquem clicáveis. É ajuste visual, não altera a base.
+function afastaCoincidentes(regs) {
+  const grupos = {};
+  regs.filter(r => r.lat !== null).forEach(r => {
+    const k = r.lat.toFixed(3) + "," + r.lon.toFixed(3);
+    (grupos[k] = grupos[k] || []).push(r);
+  });
+  Object.values(grupos).forEach(g => {
+    if (g.length < 2) return;
+    g.forEach((r, i) => {
+      const a = (2 * Math.PI * i) / g.length;
+      r.lat += 0.012 * Math.sin(a);
+      r.lon += 0.012 * Math.cos(a);
+    });
+  });
+}
+
+// ---------- Geocodificação de linhas novas ----------
+function cacheGeo() {
+  try { return JSON.parse(localStorage.getItem("geocache_cgina") || "{}"); } catch (e) { return {}; }
+}
+function gravaCacheGeo(c) {
+  try { localStorage.setItem("geocache_cgina", JSON.stringify(c)); } catch (e) { /* modo privado */ }
+}
+
+async function geocodificaFaltantes(regs) {
+  if (!CFG.GEOCODIFICAR_NO_NAVEGADOR) return 0;
+  const faltam = regs.filter(r => r.lat === null && (r.cidade || r.endereco) && r.uf);
+  if (!faltam.length) return 0;
+  const cache = cacheGeo();
+  let feitos = 0;
+  const limite = CFG.LIMITE_GEOCODIFICACAO || 8;
+  for (const r of faltam.slice(0, limite)) {
+    const consulta = [r.endereco, r.cidade, NOME_UF[r.uf] || r.uf].filter(Boolean).join(", ");
+    let res = cache[consulta];
+    if (res === undefined) {
+      try {
+        const u = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=" + encodeURIComponent(consulta);
+        const r2 = await fetch(u);
+        const j = await r2.json();
+        res = j.length ? { lat: parseFloat(j[0].lat), lon: parseFloat(j[0].lon) } : null;
+        cache[consulta] = res;
+        gravaCacheGeo(cache);
+        await new Promise(s => setTimeout(s, 1200)); // política de uso do Nominatim
+      } catch (e) { res = null; }
+    }
+    if (res) { r.lat = res.lat; r.lon = res.lon; r.precisao_geo = r.precisao_geo || "cidade"; feitos++; }
+  }
+  return feitos;
+}
+
+// ---------- Mapa ----------
+let mapa, camadaUF, camadaPontos, malha = null;
+const marcadores = {};
+const totalPorUF = {};
+
+function estiloUF() { return { color: cor("--axis"), weight: 1, fillColor: cor("--surface-2"), fillOpacity: 1 }; }
+
+function desenhaUF() {
+  if (!malha) return;
+  if (camadaUF) camadaUF.remove();
+  camadaUF = L.geoJSON(malha, {
+    style: estiloUF,
+    onEachFeature: (f, camada) => {
+      const uf = COD_UF[f.properties.codarea] || f.properties.codarea;
+      camada.bindTooltip(() => {
+        const n = totalPorUF[uf] || 0;
+        return `${NOME_UF[uf] || uf}: ${n} unidade${n === 1 ? "" : "s"}`;
+      }, { sticky: true, direction: "top", opacity: 1 });
+      camada.on("mouseover", () => camada.setStyle({ fillColor: cor("--hairline") }));
+      camada.on("mouseout", () => camada.setStyle(estiloUF()));
+    }
+  }).addTo(mapa);
+  camadaUF.bringToBack();
+}
+
+function iniciaMapa() {
+  mapa = L.map("mapa", { zoomControl: true, attributionControl: false, minZoom: 3, maxZoom: 15, zoomSnap: 0.25 });
+  mapa.setView([-14.5, -52.5], 3.6);
+  camadaPontos = L.layerGroup().addTo(mapa);
+}
+
+function enquadra() {
+  if (camadaUF) mapa.fitBounds(camadaUF.getBounds(), { padding: [8, 8] });
+}
+
+// ---------- Fichas ----------
+let ativo = null;
+
+function cartao(r) {
+  const c = texto("article", "ator " + (CLASSE_AREA[r.area_principal] || ""));
+  c.dataset.idx = r.idx; c.tabIndex = 0;
+  const l1 = texto("div", "linha1");
+  l1.appendChild(texto("h3", "", r.nome + (r.sigla && !r.nome.includes(r.sigla) ? " (" + r.sigla + ")" : "")));
+  l1.appendChild(texto("span", "local", [r.cidade, r.uf].filter(Boolean).join(", ")));
+  c.appendChild(l1);
+  c.appendChild(texto("div", "inst", r.instituicao + (r.unidade_vinculacao ? ", " + r.unidade_vinculacao : "")));
+  if (r.responsavel_nome) {
+    const resp = texto("div", "resp", r.responsavel_nome);
+    if (r.responsavel_cargo) { resp.appendChild(document.createTextNode(" ")); resp.appendChild(texto("span", "", "(" + r.responsavel_cargo + ")")); }
+    c.appendChild(resp);
+  }
+  const cont = texto("div", "contato");
+  if (r.email_contato) { const a = texto("a", "", r.email_contato); a.href = "mailto:" + r.email_contato.split(";")[0].trim(); cont.appendChild(a); }
+  if (r.telefone_contato) cont.appendChild(texto("span", "", r.telefone_contato));
+  if (r.url) { const a = texto("a", "", "Página oficial"); a.href = r.url; a.target = "_blank"; a.rel = "noopener"; cont.appendChild(a); }
+  if (cont.childNodes.length) c.appendChild(cont);
+  const tags = texto("div", "tags");
+  if (r.tipo_unidade) tags.appendChild(texto("span", "tag", r.tipo_unidade));
+  if (r.natureza_instituicao) tags.appendChild(texto("span", "tag", r.natureza_instituicao));
+  if (r.areas_secundarias) {
+    const extras = r.areas_secundarias.split(/[;,]/).map(s => ROTULO_AREA[s.trim()] || s.trim()).filter(Boolean);
+    if (extras.length) tags.appendChild(texto("span", "tag", "também: " + extras.join(", ")));
+  }
+  if (r.grau_verificacao === "parcial") tags.appendChild(texto("span", "tag parcial", "verificação parcial"));
+  if (r.lat === null) tags.appendChild(texto("span", "tag parcial", "sem localização, fora do mapa"));
+  else if (r.precisao_geo && r.precisao_geo !== "endereco") tags.appendChild(texto("span", "tag", "posição: " + r.precisao_geo));
+  c.appendChild(tags);
+  if (r.temas_correlatos_cgina) c.appendChild(texto("div", "temas", r.temas_correlatos_cgina));
+  const abrir = () => selecionar(r, true);
+  c.addEventListener("click", (ev) => { if (ev.target.tagName !== "A") abrir(); });
+  c.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); abrir(); } });
+  return c;
+}
+
+function conteudoPopup(r) {
+  const d = document.createElement("div");
+  d.appendChild(texto("strong", "", r.nome));
+  d.appendChild(texto("div", "sec", r.instituicao + " · " + [r.cidade, r.uf].filter(Boolean).join(", ")));
+  if (r.responsavel_nome) d.appendChild(texto("div", "", r.responsavel_nome + (r.responsavel_cargo ? ", " + r.responsavel_cargo : "")));
+  if (r.email_contato) { const a = texto("a", "", r.email_contato); a.href = "mailto:" + r.email_contato.split(";")[0].trim(); d.appendChild(a); }
+  if (r.url) { const p = document.createElement("div"); const a = texto("a", "", "Página oficial"); a.href = r.url; a.target = "_blank"; a.rel = "noopener"; p.appendChild(a); d.appendChild(p); }
+  return d;
+}
+
+function selecionar(r, voar) {
+  document.querySelectorAll(".ator.ativo").forEach(e => e.classList.remove("ativo"));
+  const c = document.querySelector(`.ator[data-idx="${r.idx}"]`);
+  if (c) { c.classList.add("ativo"); c.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+  ativo = r.idx;
+  if (r.lat === null) return;
+  const m = marcadores[r.idx];
+  if (m) {
+    if (voar) mapa.flyTo([r.lat, r.lon], Math.max(mapa.getZoom(), 7), { duration: 0.6 });
+    m.openPopup();
+  }
+}
+
+function desenhaPontos(lista) {
+  camadaPontos.clearLayers();
+  Object.keys(marcadores).forEach(k => delete marcadores[k]);
+  const varCor = { ciencia_de_dados: "--dados", politicas_publicas: "--politicas", divulgacao_cientifica: "--divulgacao" };
+  lista.filter(r => r.lat !== null).forEach(r => {
+    const m = L.circleMarker([r.lat, r.lon], { radius: 7, color: cor("--surface"), weight: 2, fillColor: cor(varCor[r.area_principal] || "--axis"), fillOpacity: 0.95 });
+    const rotulo = document.createElement("div");
+    rotulo.appendChild(texto("span", "", (r.sigla ? r.sigla + " · " : "") + r.nome));
+    rotulo.appendChild(document.createElement("br"));
+    const sec = texto("span", "", r.sigla_instituicao || r.instituicao);
+    sec.style.color = cor("--ink-2");
+    rotulo.appendChild(sec);
+    m.bindTooltip(rotulo, { direction: "top", offset: [0, -8], opacity: 1 });
+    m.bindPopup(() => conteudoPopup(r), { maxWidth: 300 });
+    m.on("click", () => selecionar(r, false));
+    m.on("mouseover", () => m.setStyle({ radius: 9 }));
+    m.on("mouseout", () => m.setStyle({ radius: 7 }));
+    m.addTo(camadaPontos);
+    marcadores[r.idx] = m;
+  });
+}
+
+// ---------- Filtros e render ----------
+function passa(r) {
+  if (r.area_principal && !estado.areas.has(r.area_principal)) return false;
+  if (estado.natureza && r.natureza_instituicao !== estado.natureza) return false;
+  if (estado.regiao && r.regiao !== estado.regiao) return false;
+  if (estado.uf && r.uf !== estado.uf) return false;
+  if (estado.busca) {
+    const alvo = normaliza([r.nome, r.sigla, r.instituicao, r.sigla_instituicao, r.cidade, r.temas_correlatos_cgina, r.responsavel_nome, r.tipo_unidade].join(" "));
+    if (!alvo.includes(normaliza(estado.busca))) return false;
+  }
+  return true;
+}
+
+function preencheSelects() {
+  const encher = (id, valores) => {
+    const s = el(id);
+    const atual = s.value;
+    s.replaceChildren();
+    const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "todas"; s.appendChild(o0);
+    valores.forEach(v => { const o = document.createElement("option"); o.value = v; o.textContent = v; s.appendChild(o); });
+    if (valores.includes(atual)) s.value = atual;
+  };
+  encher("f-natureza", [...new Set(estado.registros.map(r => r.natureza_instituicao).filter(Boolean))].sort());
+  encher("f-regiao", ORDEM_REGIAO.filter(reg => estado.registros.some(r => r.regiao === reg)));
+  encher("f-uf", [...new Set(estado.registros.map(r => r.uf).filter(Boolean))].sort());
+}
+
+function atualiza() {
+  const lista = estado.registros.filter(passa);
+  lista.sort((a, b) =>
+    a.area_principal.localeCompare(b.area_principal) ||
+    (ORDEM_REGIAO.indexOf(a.regiao) - ORDEM_REGIAO.indexOf(b.regiao)) ||
+    a.uf.localeCompare(b.uf) || a.instituicao.localeCompare(b.instituicao) || a.nome.localeCompare(b.nome));
+  el("n-total").textContent = lista.length;
+  el("n-sub").textContent = "de " + estado.registros.length + " mapeadas";
+  el("n-dados").textContent = lista.filter(r => r.area_principal === "ciencia_de_dados").length;
+  el("n-politicas").textContent = lista.filter(r => r.area_principal === "politicas_publicas").length;
+  el("n-divulgacao").textContent = lista.filter(r => r.area_principal === "divulgacao_cientifica").length;
+  const ufs = new Set(lista.map(r => r.uf).filter(Boolean));
+  el("lista-contagem").textContent = `${lista.length} unidade${lista.length === 1 ? "" : "s"} em ${ufs.size} UF${ufs.size === 1 ? "" : "s"}`;
+  Object.keys(totalPorUF).forEach(k => delete totalPorUF[k]);
+  lista.forEach(r => { if (r.uf) totalPorUF[r.uf] = (totalPorUF[r.uf] || 0) + 1; });
+  const cont = el("lista");
+  cont.replaceChildren();
+  if (!lista.length) cont.appendChild(texto("div", "vazio", "Nenhuma unidade atende aos filtros."));
+  lista.forEach(r => cont.appendChild(cartao(r)));
+  desenhaPontos(lista);
+}
+
+// ---------- Ciclo de carga ----------
+async function carregaTudo(primeira) {
+  const btn = el("btn-recarregar");
+  btn.disabled = true;
+  el("meta-fonte").textContent = "Carregando dados";
+  try {
+    if (!malha) {
+      try { malha = JSON.parse(await buscaTexto(CFG.MALHA_UF || "dados/br_uf.geojson")); }
+      catch (e) { malha = null; }
+    }
+    if (primeira) iniciaMapa();
+    desenhaUF();
+    if (primeira) enquadra();
+    const regs = await carregaDados();
+    const novos = await geocodificaFaltantes(regs);
+    afastaCoincidentes(regs);
+    estado.registros = regs;
+    estado.carregadoEm = new Date();
+    preencheSelects();
+    atualiza();
+    const hora = estado.carregadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    el("meta-fonte").textContent = `${regs.length} unidades, da ${estado.fonte}, às ${hora}`;
+    if (novos) {
+      const d = document.createElement("div");
+      d.appendChild(document.createTextNode(`${novos} linha${novos === 1 ? "" : "s"} da planilha estava${novos === 1 ? "" : "m"} sem coordenada e foi${novos === 1 ? "" : "ram"} posicionada${novos === 1 ? "" : "s"} pelo endereço, com precisão de cidade. Preencha latitude e longitude na planilha para fixar o ponto.`));
+      mostraFaixa(d, false);
+    }
+  } catch (erro) {
+    const d = document.createElement("div");
+    d.appendChild(texto("strong", "", "Não foi possível carregar os dados. "));
+    d.appendChild(document.createTextNode(erro.message));
+    mostraFaixa(d, true);
+    el("meta-fonte").textContent = "Falha ao carregar";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+  const on = b.getAttribute("aria-pressed") === "true";
+  b.setAttribute("aria-pressed", on ? "false" : "true");
+  if (on) estado.areas.delete(b.dataset.area); else estado.areas.add(b.dataset.area);
+  atualiza();
+}));
+el("f-natureza").addEventListener("change", e => { estado.natureza = e.target.value; atualiza(); });
+el("f-regiao").addEventListener("change", e => { estado.regiao = e.target.value; atualiza(); });
+el("f-uf").addEventListener("change", e => { estado.uf = e.target.value; atualiza(); });
+el("f-busca").addEventListener("input", e => { estado.busca = e.target.value.trim(); atualiza(); });
+el("f-limpar").addEventListener("click", () => {
+  estado.areas = new Set(["ciencia_de_dados", "politicas_publicas", "divulgacao_cientifica"]);
+  estado.natureza = estado.regiao = estado.uf = estado.busca = "";
+  document.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", "true"));
+  el("f-natureza").value = el("f-regiao").value = el("f-uf").value = ""; el("f-busca").value = "";
+  atualiza();
+  enquadra();
+});
+el("btn-recarregar").addEventListener("click", () => { escondeFaixa(); carregaTudo(false); });
+
+const mq = window.matchMedia("(prefers-color-scheme: dark)");
+const aoMudarTema = () => { desenhaUF(); atualiza(); };
+if (mq.addEventListener) mq.addEventListener("change", aoMudarTema);
+new MutationObserver(aoMudarTema).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+carregaTudo(true);
+</script>
+</body>
+</html>
