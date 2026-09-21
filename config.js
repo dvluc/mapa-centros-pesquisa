@@ -9,7 +9,7 @@
 // e avisa isso no rodapé.
 
 window.CONFIG = {
-  PLANILHA_ID: "1eyQmNvrSGvKX-fjnOeig6grQjnZGapjKC_UUN3lyJxg",
+  PLANILHA_ID: "14BfTKyQIgwU0V57jX04A05rosjGQX8dm11qFUqjzxl0",
 
   // Nome da aba da planilha. Vazio usa a primeira aba.
   PLANILHA_ABA: "",
