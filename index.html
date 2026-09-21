@@ -5,376 +5,188 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mapa de Centros de Pesquisa</title>
 <meta name="description" content="Centros, laboratórios e núcleos de pesquisa brasileiros em ciência de dados, políticas públicas e divulgação científica.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='34' fill='%233C6DE7'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* ================================================================
-   Tokens do design system.
-   O modo claro é o sistema entregue, sem alteração de valor.
-   O modo escuro é derivação, porque o sistema não o define.
-   ================================================================ */
 :root {
   color-scheme: light;
-
-  /* superfícies */
-  --bg-canvas:    #F6F6F4;
-  --bg-surface:   #FFFFFF;
-  --bg-sunken:    #EFEFEC;
-  --bg-landmass:  #E4E4DF;
-
-  /* tinta */
-  --ink-900: #1B1B19;
-  --ink-600: #6F6F69;
-  --ink-400: #A0A09A;
-  --ink-inverse: #FFFFFF;
-
-  /* linhas */
-  --line:        rgba(27, 27, 25, 0.08);
-  --line-strong: rgba(27, 27, 25, 0.12);
-
-  /* cor de marca */
-  --accent-green:      #57C97C;
-  --accent-green-ink:  #2FA35B;
-  --accent-green-ring: rgba(87, 201, 124, 0.18);
-
-  /* categóricas do sistema */
-  --cat-blue:     #3C6DE7;
-  --cat-violet:   #7C5CE6;
-  --cat-slate:    #57616F;
-  --cat-graphite: #3A3A38;
-
-  /* As três categorias do mapa, escolhidas entre as acima por teste de
-     distinguibilidade. O violeta ficou de fora por ser indistinguível
-     do azul sob protanopia e deuteranopia. */
-  --cat-dados:      var(--cat-blue);
-  --cat-politicas:  var(--cat-graphite);
-  --cat-divulgacao: var(--accent-green-ink);
-
-  /* estado */
-  --erro: #C0392B;
-
-  /* tipografia */
-  --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --text-title: 500 24px/1.15 var(--font-sans);
-  --text-lg:    500 15px/1.5  var(--font-sans);
-  --text-body:  400 13.5px/1.62 var(--font-sans);
-  --text-sm:    400 12px/1.45 var(--font-sans);
-  --text-label: 400 11px/1.3  var(--font-mono);
-  --tracking-title: -0.02em;
-  --tracking-label:  0.08em;
-
-  /* espaço */
-  --space-1: 4px;  --space-2: 8px;  --space-3: 12px;
-  --space-4: 18px; --space-5: 24px; --space-6: 32px;
-
-  /* raio */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-panel: 14px;
-  --radius-pill: 999px;
-
-  /* elevação */
-  --shadow-1: 0 1px 2px rgba(27, 27, 25, 0.05);
-  --shadow-panel: 0 1px 2px rgba(27, 27, 25, 0.04),
-                  0 10px 28px rgba(27, 27, 25, 0.08);
-  --shadow-marker: 0 1px 3px rgba(27, 27, 25, 0.25);
-
-  /* movimento */
-  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --dur-fast: 120ms;
-  --dur-base: 200ms;
+  --plane: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #efeee9;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --hairline: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.06);
+  --dados: #2a78d6;
+  --politicas: #eb6834;
+  --divulgacao: #1baf7a;
+  --foco: #2a78d6;
+  --aviso: #fab219;
+  --erro: #d03b3b;
 }
-
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg-canvas:   #131312;
-    --bg-surface:  #1C1C1A;
-    --bg-sunken:   #232320;
-    --bg-landmass: #2B2B27;
-    --ink-900: #F4F4F1;
-    --ink-600: #A8A8A1;
-    --ink-400: #74746E;
-    --ink-inverse: #131312;
-    --line:        rgba(255, 255, 255, 0.09);
-    --line-strong: rgba(255, 255, 255, 0.15);
-    --accent-green:      #6FD590;
-    --accent-green-ink:  #35A35E;
-    --accent-green-ring: rgba(87, 201, 124, 0.24);
-    --cat-dados:      #8AAAF4;
-    --cat-politicas:  #DCDCD4;
-    --cat-divulgacao: #35A35E;
-    --erro: #E8705F;
-    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px rgba(0, 0, 0, 0.45);
-    --shadow-marker: 0 1px 3px rgba(0, 0, 0, 0.6);
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232322;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --hairline: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --shadow: none;
+    --dados: #3987e5;
+    --politicas: #d95926;
+    --divulgacao: #199e70;
+    --foco: #3987e5;
+    --aviso: #fab219;
+    --erro: #e66767;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg-canvas:   #131312;
-  --bg-surface:  #1C1C1A;
-  --bg-sunken:   #232320;
-  --bg-landmass: #2B2B27;
-  --ink-900: #F4F4F1;
-  --ink-600: #A8A8A1;
-  --ink-400: #74746E;
-  --ink-inverse: #131312;
-  --line:        rgba(255, 255, 255, 0.09);
-  --line-strong: rgba(255, 255, 255, 0.15);
-  --accent-green:      #6FD590;
-  --accent-green-ink:  #35A35E;
-  --accent-green-ring: rgba(87, 201, 124, 0.24);
-  --cat-dados:      #8AAAF4;
-  --cat-politicas:  #DCDCD4;
-  --cat-divulgacao: #35A35E;
-  --erro: #E8705F;
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px rgba(0, 0, 0, 0.45);
-  --shadow-marker: 0 1px 3px rgba(0, 0, 0, 0.6);
+  --plane: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #232322;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --hairline: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --shadow: none;
+  --dados: #3987e5;
+  --politicas: #d95926;
+  --divulgacao: #199e70;
+  --foco: #3987e5;
+  --aviso: #fab219;
+  --erro: #e66767;
 }
-
-/* ================================================================
-   Base
-   ================================================================ */
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
-  background: var(--bg-canvas);
-  color: var(--ink-900);
-  font: var(--text-body);
-  padding-inline: var(--space-4);
-  padding-block: 0 var(--space-6);
-  max-width: 1460px;
+  background: var(--plane);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  padding-inline: 16px;
+  padding-block: 0 24px;
+  max-width: 1440px;
   margin-inline: auto;
 }
-h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 600; }
 img { max-width: 100%; }
 a { color: inherit; }
 button, select, input { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--cat-blue); outline-offset: 2px; border-radius: var(--radius-sm); }
+:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+.eyebrow { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
 
-/* componentes do sistema */
-.panel {
-  background: var(--bg-surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--shadow-panel);
-  padding: var(--space-4);
-}
-.label {
-  font: var(--text-label);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--ink-400);
-}
-.pill {
-  border-radius: var(--radius-pill);
-  padding: 6px 13px;
-  font: var(--text-sm);
-  font-weight: 500;
-  color: var(--ink-600);
-  background: transparent;
-  border: 1px solid var(--line-strong);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 34px;
-  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
-}
-.pill:hover { background: var(--bg-sunken); }
-.pill[aria-pressed="true"] {
-  background: var(--ink-900);
-  color: var(--ink-inverse);
-  border-color: var(--ink-900);
-}
+.topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; padding-block: 20px 12px; border-bottom: 1px solid var(--hairline); }
+.topo h1 { font-size: 22px; line-height: 1.2; }
+.topo p { margin: 4px 0 0; color: var(--ink-2); max-width: 64ch; }
+.topo .meta { color: var(--muted); font-size: 12px; text-align: right; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.recarregar { background: var(--surface); border: 1px solid var(--axis); border-radius: 5px; padding: 5px 10px; cursor: pointer; color: var(--ink-2); min-height: 32px; }
+.recarregar:hover { color: var(--ink); }
+.recarregar[disabled] { opacity: 0.5; cursor: default; }
 
-/* Marcador: cor e forma, para que a categoria não dependa só da cor. */
-.marker {
-  width: 18px; height: 18px;
-  border-radius: var(--radius-pill);
-  border: 2px solid var(--bg-surface);
-  box-shadow: var(--shadow-marker);
-  display: block;
-  transition: transform var(--dur-fast) var(--ease);
-}
-.marker.dados      { background: var(--cat-dados); }
-.marker.politicas  { background: var(--cat-politicas); border-radius: var(--radius-sm); }
-.marker.divulgacao { background: var(--cat-divulgacao); border-radius: 3px; transform: rotate(45deg); }
-.marcador-leaflet:hover .marker { transform: scale(1.25); }
-.marcador-leaflet:hover .marker.divulgacao { transform: rotate(45deg) scale(1.25); }
-
-/* Amostra usada na legenda, nos contadores, nos filtros e nas fichas. */
-.amostra { width: 11px; height: 11px; flex: none; display: inline-block; border-radius: var(--radius-pill); }
-.amostra.dados      { background: var(--cat-dados); }
-.amostra.politicas  { background: var(--cat-politicas); border-radius: 3px; }
-.amostra.divulgacao { background: var(--cat-divulgacao); border-radius: 2px; transform: rotate(45deg); }
-
-/* ================================================================
-   Cabeçalho
-   ================================================================ */
-.topo {
-  display: flex; flex-wrap: wrap;
-  align-items: flex-end; justify-content: space-between;
-  gap: var(--space-3) var(--space-6);
-  padding-block: var(--space-5) var(--space-4);
-  border-bottom: 1px solid var(--line);
-}
-.topo h1 { font: var(--text-title); letter-spacing: var(--tracking-title); margin-top: var(--space-2); }
-.topo p { margin: var(--space-2) 0 0; color: var(--ink-600); max-width: 62ch; }
-.topo .meta { display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-end; }
-.topo .meta .estado { font: var(--text-sm); color: var(--ink-400); }
-.recarregar {
-  background: var(--bg-surface); border: 1px solid var(--line-strong);
-  border-radius: var(--radius-pill); padding: 6px 14px;
-  font: var(--text-sm); font-weight: 500; color: var(--ink-600);
-  cursor: pointer; min-height: 32px;
-  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
-}
-.recarregar:hover { background: var(--bg-sunken); color: var(--ink-900); }
-.recarregar[disabled] { opacity: 0.45; cursor: default; }
-
-.faixa {
-  display: none; gap: var(--space-2); align-items: flex-start;
-  background: var(--bg-surface);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--erro);
-  border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
-  margin-top: var(--space-4);
-  font: var(--text-sm); color: var(--ink-600);
-}
+.faixa { display: none; gap: 8px; align-items: flex-start; border: 1px solid var(--border); border-left: 4px solid var(--aviso); background: var(--surface); border-radius: 6px; padding: 10px 12px; margin-top: 14px; font-size: 13px; color: var(--ink-2); }
 .faixa.visivel { display: flex; }
-.faixa strong { color: var(--ink-900); font-weight: 500; }
+.faixa.erro { border-left-color: var(--erro); }
+.faixa strong { color: var(--ink); font-weight: 600; }
 
-/* ================================================================
-   Contadores
-   ================================================================ */
-.numeros {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-3); padding-block: var(--space-5) var(--space-4);
-}
-.tile { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
-.tile .valor { font: 500 30px/1.05 var(--font-sans); letter-spacing: var(--tracking-title); font-variant-numeric: tabular-nums; }
-.tile .rotulo { display: flex; align-items: center; gap: var(--space-2); color: var(--ink-600); font: var(--text-sm); }
-.tile .sub { font: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-400); margin-top: var(--space-1); }
+.numeros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding-block: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tile .valor { font-size: 28px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .rotulo { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; }
+.tile .sub { color: var(--muted); font-size: 12px; }
+.ponto { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
+.ponto.dados { background: var(--dados); }
+.ponto.politicas { background: var(--politicas); }
+.ponto.divulgacao { background: var(--divulgacao); }
 
-/* ================================================================
-   Filtros
-   ================================================================ */
-.filtros { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); padding-block: 0 var(--space-4); }
-.filtros .grupo { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-.filtros label { display: flex; align-items: center; gap: var(--space-2); color: var(--ink-400); font: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase; }
-.filtros select, .filtros input[type="search"] {
-  background: var(--bg-surface); border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm); padding: 7px 10px; min-height: 34px;
-  font: var(--text-sm); color: var(--ink-900);
-}
-.filtros input[type="search"] { min-width: 230px; flex: 1 1 230px; }
-.filtros input[type="search"]::placeholder { color: var(--ink-400); }
-.limpar { background: none; border: none; color: var(--ink-400); font: var(--text-sm); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 6px 4px; }
-.limpar:hover { color: var(--ink-900); }
+.filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding-block: 4px 14px; }
+.filtros label { display: flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 13px; }
+.filtros select, .filtros input[type="search"] { background: var(--surface); border: 1px solid var(--axis); border-radius: 5px; padding: 6px 8px; min-height: 34px; }
+.filtros input[type="search"] { min-width: 220px; flex: 1 1 220px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--axis); background: var(--surface); border-radius: 999px; padding: 5px 11px 5px 8px; cursor: pointer; color: var(--ink-2); min-height: 34px; }
+.chip[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); }
+.chip[aria-pressed="false"] .ponto { opacity: 0.3; }
+.limpar { background: none; border: none; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 6px 4px; }
+.limpar:hover { color: var(--ink); }
 
-/* ================================================================
-   Mapa e lista
-   ================================================================ */
-.grade { display: grid; grid-template-columns: minmax(0, 3fr) minmax(330px, 2fr); gap: var(--space-4); align-items: start; }
-.cartao-mapa { padding: 0; overflow: hidden; position: relative; }
-#mapa { height: 72vh; min-height: 460px; background: var(--bg-sunken); }
-.leaflet-container { font: var(--text-body); background: var(--bg-sunken); }
-.leaflet-bar { border: 1px solid var(--line) !important; box-shadow: var(--shadow-1) !important; border-radius: var(--radius-sm) !important; overflow: hidden; }
-.leaflet-bar a { background: var(--bg-surface) !important; color: var(--ink-600) !important; border-bottom-color: var(--line) !important; }
-.leaflet-bar a:hover { background: var(--bg-sunken) !important; color: var(--ink-900) !important; }
-.leaflet-tooltip {
-  background: var(--bg-surface); color: var(--ink-900);
-  border: 1px solid var(--line); border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-panel); font: var(--text-sm); padding: var(--space-2) var(--space-3);
-}
-.leaflet-tooltip .sec { color: var(--ink-400); }
+.grade { display: grid; grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr); gap: 16px; align-items: start; }
+.cartao-mapa { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative; }
+#mapa { height: 70vh; min-height: 440px; background: var(--surface); }
+.leaflet-container { font: inherit; background: var(--surface); }
+.leaflet-bar { border: 1px solid var(--border) !important; box-shadow: var(--shadow) !important; }
+.leaflet-bar a { background: var(--surface) !important; color: var(--ink) !important; border-bottom-color: var(--hairline) !important; }
+.leaflet-tooltip { background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--shadow); font-size: 12px; padding: 6px 8px; }
 .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before, .leaflet-tooltip-left:before, .leaflet-tooltip-right:before { display: none; }
-.leaflet-popup-content-wrapper { background: var(--bg-surface); color: var(--ink-900); border-radius: var(--radius-md); box-shadow: var(--shadow-panel); border: 1px solid var(--line); }
-.leaflet-popup-tip { background: var(--bg-surface); box-shadow: none; }
-.leaflet-popup-content { margin: var(--space-4); font: var(--text-sm); }
-.leaflet-popup-content strong { display: block; font: var(--text-lg); margin-bottom: var(--space-1); }
-.leaflet-popup-content .sec { color: var(--ink-600); margin-bottom: var(--space-2); }
-.leaflet-popup-content a { color: var(--cat-blue); }
-.leaflet-container a.leaflet-popup-close-button { color: var(--ink-400); }
-.marcador-leaflet { background: none; border: none; }
+.leaflet-popup-content-wrapper { background: var(--surface); color: var(--ink); border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
+.leaflet-popup-tip { background: var(--surface); }
+.leaflet-popup-content { margin: 12px 14px; font-size: 13px; line-height: 1.4; }
+.leaflet-popup-content strong { display: block; font-size: 14px; margin-bottom: 2px; }
+.leaflet-popup-content .sec { color: var(--ink-2); }
+.leaflet-popup-content a { color: var(--foco); }
+.leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+.legenda { position: absolute; left: 10px; bottom: 10px; z-index: 500; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--ink-2); }
+.legenda div { display: flex; align-items: center; gap: 7px; }
+.legenda .nota { color: var(--muted); font-size: 11px; margin-top: 2px; }
 
-.legenda {
-  position: absolute; left: var(--space-3); bottom: var(--space-3); z-index: 500;
-  background: var(--bg-surface); border: 1px solid var(--line);
-  border-radius: var(--radius-md); box-shadow: var(--shadow-1);
-  padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2);
-  font: var(--text-sm); color: var(--ink-600);
-}
-.legenda div { display: flex; align-items: center; gap: var(--space-2); }
-.legenda .nota { color: var(--ink-400); font: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase; margin-top: var(--space-1); }
+.lista-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 0 2px 8px; }
+.lista-cab .contagem { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+#lista { display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow-y: auto; padding-right: 2px; }
+.ator { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--axis); border-radius: 6px; padding: 10px 12px; display: grid; gap: 4px; cursor: pointer; }
+.ator.dados { border-left-color: var(--dados); }
+.ator.politicas { border-left-color: var(--politicas); }
+.ator.divulgacao { border-left-color: var(--divulgacao); }
+.ator.ativo { outline: 2px solid var(--foco); outline-offset: 1px; }
+.ator .linha1 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.ator h3 { font-size: 14px; line-height: 1.3; }
+.ator .inst { color: var(--ink-2); font-size: 13px; }
+.ator .local { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.ator .resp { font-size: 13px; }
+.ator .resp span { color: var(--ink-2); }
+.ator .contato { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); }
+.ator .contato a { color: var(--foco); text-decoration: none; }
+.ator .contato a:hover { text-decoration: underline; }
+.ator .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.tag { font-size: 11px; color: var(--muted); border: 1px solid var(--hairline); border-radius: 4px; padding: 1px 6px; }
+.tag.parcial { color: var(--ink-2); border-style: dashed; }
+.ator .temas { color: var(--ink-2); font-size: 12px; display: none; }
+.ator.ativo .temas { display: block; }
+.vazio { color: var(--muted); padding: 24px; text-align: center; }
+.rodape { color: var(--muted); font-size: 12px; padding-block: 16px 0; border-top: 1px solid var(--hairline); margin-top: 16px; max-width: 90ch; }
+.rodape a { color: var(--foco); }
 
-.lista-cab { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); padding: 0 var(--space-1) var(--space-3); }
-.lista-cab h2 { font: var(--text-lg); }
-.lista-cab .contagem { font: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-400); font-variant-numeric: tabular-nums; }
-#lista { display: flex; flex-direction: column; gap: var(--space-2); max-height: 72vh; overflow-y: auto; padding: 2px; }
-
-.ator {
-  background: var(--bg-surface); border: 1px solid var(--line);
-  border-radius: var(--radius-md); padding: var(--space-3) var(--space-4);
-  display: grid; gap: var(--space-1); cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
-}
-.ator:hover { border-color: var(--line-strong); box-shadow: var(--shadow-1); }
-.ator.ativo { border-color: var(--accent-green-ink); box-shadow: 0 0 0 3px var(--accent-green-ring); }
-.ator .linha1 { display: flex; justify-content: space-between; gap: var(--space-2); align-items: baseline; }
-.ator h3 { font: var(--text-lg); display: flex; align-items: baseline; gap: var(--space-2); }
-.ator .inst { color: var(--ink-600); font: var(--text-sm); }
-.ator .local { color: var(--ink-400); font: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase; white-space: nowrap; }
-.ator .resp { font: var(--text-sm); color: var(--ink-900); margin-top: var(--space-1); }
-.ator .resp span { color: var(--ink-600); }
-.ator .contato { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); font: var(--text-sm); color: var(--ink-600); }
-.ator .contato a { color: var(--cat-blue); text-decoration: none; }
-.ator .contato a:hover { text-decoration: underline; text-underline-offset: 2px; }
-.ator .tags { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-2); }
-.tag {
-  font: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase;
-  color: var(--ink-400); background: var(--bg-sunken);
-  border-radius: var(--radius-sm); padding: 3px 7px;
-}
-.tag.atencao { color: var(--ink-600); background: transparent; border: 1px dashed var(--line-strong); }
-.ator .relevancia { color: var(--ink-600); font: var(--text-sm); display: none; margin-top: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--line); }
-.ator.ativo .relevancia { display: block; }
-.vazio { color: var(--ink-400); padding: var(--space-6); text-align: center; font: var(--text-sm); }
-
-.rodape { color: var(--ink-400); font: var(--text-sm); padding-block: var(--space-4) 0; border-top: 1px solid var(--line); margin-top: var(--space-5); max-width: 92ch; }
-.rodape a { color: var(--ink-600); }
-
-@media (max-width: 960px) {
+@media (max-width: 900px) {
   .numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grade { grid-template-columns: 1fr; }
-  #mapa { height: 56vh; min-height: 380px; }
+  #mapa { height: 55vh; min-height: 360px; }
   #lista { max-height: none; }
-  .topo .meta { align-items: flex-start; }
+  .topo .meta { text-align: left; align-items: flex-start; }
 }
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; }
-  .leaflet-zoom-anim .leaflet-zoom-animated { transition: none; }
-}
+@media (prefers-reduced-motion: reduce) { .leaflet-zoom-anim .leaflet-zoom-animated { transition: none; } }
 </style>
 </head>
 <body>
 
 <header class="topo">
   <div>
-    <div class="label">Projeto pessoal</div>
+    <div class="eyebrow">Projeto pessoal</div>
     <h1>Mapa de centros de pesquisa</h1>
     <p>Centros, laboratórios, núcleos e institutos brasileiros que trabalham com ciência de dados, políticas públicas e divulgação científica. Cada ficha traz responsável, contato institucional e página oficial.</p>
   </div>
   <div class="meta">
-    <span class="estado" id="meta-fonte">Carregando dados</span>
+    <span id="meta-fonte">Carregando dados</span>
     <button class="recarregar" id="btn-recarregar" type="button">Recarregar dados</button>
   </div>
 </header>
@@ -382,17 +194,17 @@ button, select, input { font: inherit; color: inherit; }
 <div class="faixa" id="faixa" role="status"></div>
 
 <section class="numeros" aria-label="Totais">
-  <div class="tile panel"><div class="valor" id="n-total">0</div><div class="rotulo">Unidades no recorte</div><div class="sub" id="n-sub"></div></div>
-  <div class="tile panel"><div class="valor" id="n-dados">0</div><div class="rotulo"><span class="amostra dados"></span>Ciência de dados</div></div>
-  <div class="tile panel"><div class="valor" id="n-politicas">0</div><div class="rotulo"><span class="amostra politicas"></span>Políticas públicas</div></div>
-  <div class="tile panel"><div class="valor" id="n-divulgacao">0</div><div class="rotulo"><span class="amostra divulgacao"></span>Divulgação científica</div></div>
+  <div class="tile"><div class="valor" id="n-total">0</div><div class="rotulo">Unidades no recorte</div><div class="sub" id="n-sub"></div></div>
+  <div class="tile"><div class="valor" id="n-dados">0</div><div class="rotulo"><span class="ponto dados"></span>Ciência de dados</div></div>
+  <div class="tile"><div class="valor" id="n-politicas">0</div><div class="rotulo"><span class="ponto politicas"></span>Políticas públicas</div></div>
+  <div class="tile"><div class="valor" id="n-divulgacao">0</div><div class="rotulo"><span class="ponto divulgacao"></span>Divulgação científica</div></div>
 </section>
 
 <section class="filtros" aria-label="Filtros">
-  <div class="grupo" role="group" aria-label="Área principal">
-    <button class="pill" data-area="ciencia_de_dados" aria-pressed="true"><span class="amostra dados"></span>Ciência de dados</button>
-    <button class="pill" data-area="politicas_publicas" aria-pressed="true"><span class="amostra politicas"></span>Políticas públicas</button>
-    <button class="pill" data-area="divulgacao_cientifica" aria-pressed="true"><span class="amostra divulgacao"></span>Divulgação científica</button>
+  <div class="chips" role="group" aria-label="Área principal">
+    <button class="chip" data-area="ciencia_de_dados" aria-pressed="true"><span class="ponto dados"></span>Ciência de dados</button>
+    <button class="chip" data-area="politicas_publicas" aria-pressed="true"><span class="ponto politicas"></span>Políticas públicas</button>
+    <button class="chip" data-area="divulgacao_cientifica" aria-pressed="true"><span class="ponto divulgacao"></span>Divulgação científica</button>
   </div>
   <label>Natureza <select id="f-natureza"><option value="">todas</option></select></label>
   <label>Região <select id="f-regiao"><option value="">todas</option></select></label>
@@ -402,17 +214,17 @@ button, select, input { font: inherit; color: inherit; }
 </section>
 
 <section class="grade">
-  <div class="cartao-mapa panel">
-    <div id="mapa" role="region" aria-label="Mapa do Brasil com os centros mapeados"></div>
+  <div class="cartao-mapa">
+    <div id="mapa" role="region" aria-label="Mapa do Brasil com os atores mapeados"></div>
     <div class="legenda" aria-hidden="true">
-      <div><span class="amostra dados"></span>Ciência de dados</div>
-      <div><span class="amostra politicas"></span>Políticas públicas</div>
-      <div><span class="amostra divulgacao"></span>Divulgação científica</div>
-      <div class="nota">Cor e forma indicam a área</div>
+      <div><span class="ponto dados"></span>Ciência de dados</div>
+      <div><span class="ponto politicas"></span>Políticas públicas</div>
+      <div><span class="ponto divulgacao"></span>Divulgação científica</div>
+      <div class="nota">Passe o cursor sobre um estado para ver o total.</div>
     </div>
   </div>
   <div>
-    <div class="lista-cab"><h2>Unidades</h2><span class="contagem" id="lista-contagem"></span></div>
+    <div class="lista-cab"><h2 style="font-size:15px">Unidades</h2><span class="contagem" id="lista-contagem"></span></div>
     <div id="lista" aria-live="polite"></div>
   </div>
 </section>
@@ -474,11 +286,12 @@ const estado = {
   natureza: "", regiao: "", uf: "", busca: "",
 };
 
-function mostraFaixa(no) {
+function mostraFaixa(html, erro) {
   const f = el("faixa");
   f.replaceChildren();
-  f.appendChild(no);
+  f.appendChild(html);
   f.classList.add("visivel");
+  f.classList.toggle("erro", !!erro);
 }
 function escondeFaixa() { el("faixa").classList.remove("visivel"); }
 
@@ -614,10 +427,10 @@ let mapa, camadaUF, camadaPontos, malha = null;
 const marcadores = {};
 const totalPorUF = {};
 
-function estiloUF() { return { color: cor("--line-strong"), weight: 1, fillColor: cor("--bg-landmass"), fillOpacity: 1 }; }
+function estiloUF() { return { color: cor("--axis"), weight: 1, fillColor: cor("--surface-2"), fillOpacity: 1 }; }
 
 function desenhaUF() {
-  if (!malha || !mapa) return;
+  if (!malha) return;
   if (camadaUF) camadaUF.remove();
   camadaUF = L.geoJSON(malha, {
     style: estiloUF,
@@ -627,7 +440,7 @@ function desenhaUF() {
         const n = totalPorUF[uf] || 0;
         return `${NOME_UF[uf] || uf}: ${n} unidade${n === 1 ? "" : "s"}`;
       }, { sticky: true, direction: "top", opacity: 1 });
-      camada.on("mouseover", () => camada.setStyle({ fillColor: cor("--bg-sunken") }));
+      camada.on("mouseover", () => camada.setStyle({ fillColor: cor("--hairline") }));
       camada.on("mouseout", () => camada.setStyle(estiloUF()));
     }
   }).addTo(mapa);
@@ -641,30 +454,17 @@ function iniciaMapa() {
 }
 
 function enquadra() {
-  if (!mapa || !camadaUF) return;
-  // invalidateSize antes do fitBounds: o Leaflet mede o contêiner na criação,
-  // quando a grade ainda não assentou, e sem isso o mapa enquadra por um
-  // tamanho antigo e sobra faixa vazia ao lado.
-  mapa.invalidateSize({ animate: false });
-  mapa.fitBounds(camadaUF.getBounds(), { padding: [10, 10] });
+  if (camadaUF) mapa.fitBounds(camadaUF.getBounds(), { padding: [8, 8] });
 }
 
-// Reenquadra quando a janela muda de largura, com espera para não rodar a cada pixel.
-let tempoResize;
-window.addEventListener("resize", () => {
-  clearTimeout(tempoResize);
-  tempoResize = setTimeout(enquadra, 180);
-});
-
 // ---------- Fichas ----------
+let ativo = null;
+
 function cartao(r) {
-  const c = texto("article", "ator");
+  const c = texto("article", "ator " + (CLASSE_AREA[r.area_principal] || ""));
   c.dataset.idx = r.idx; c.tabIndex = 0;
   const l1 = texto("div", "linha1");
-  const h = texto("h3");
-  h.appendChild(texto("span", "amostra " + (CLASSE_AREA[r.area_principal] || "")));
-  h.appendChild(document.createTextNode(r.nome + (r.sigla && !r.nome.includes(r.sigla) ? " (" + r.sigla + ")" : "")));
-  l1.appendChild(h);
+  l1.appendChild(texto("h3", "", r.nome + (r.sigla && !r.nome.includes(r.sigla) ? " (" + r.sigla + ")" : "")));
   l1.appendChild(texto("span", "local", [r.cidade, r.uf].filter(Boolean).join(", ")));
   c.appendChild(l1);
   c.appendChild(texto("div", "inst", r.instituicao + (r.unidade_vinculacao ? ", " + r.unidade_vinculacao : "")));
@@ -685,11 +485,11 @@ function cartao(r) {
     const extras = r.areas_secundarias.split(/[;,]/).map(s => ROTULO_AREA[s.trim()] || s.trim()).filter(Boolean);
     if (extras.length) tags.appendChild(texto("span", "tag", "também: " + extras.join(", ")));
   }
-  if (r.grau_verificacao === "parcial") tags.appendChild(texto("span", "tag atencao", "verificação parcial"));
-  if (r.lat === null) tags.appendChild(texto("span", "tag atencao", "sem localização, fora do mapa"));
+  if (r.grau_verificacao === "parcial") tags.appendChild(texto("span", "tag parcial", "verificação parcial"));
+  if (r.lat === null) tags.appendChild(texto("span", "tag parcial", "sem localização, fora do mapa"));
   else if (r.precisao_geo && r.precisao_geo !== "endereco") tags.appendChild(texto("span", "tag", "posição: " + r.precisao_geo));
   c.appendChild(tags);
-  if (r.relevancia) c.appendChild(texto("div", "relevancia", r.relevancia));
+  if (r.relevancia) c.appendChild(texto("div", "temas", r.relevancia));
   const abrir = () => selecionar(r, true);
   c.addEventListener("click", (ev) => { if (ev.target.tagName !== "A") abrir(); });
   c.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); abrir(); } });
@@ -710,6 +510,7 @@ function selecionar(r, voar) {
   document.querySelectorAll(".ator.ativo").forEach(e => e.classList.remove("ativo"));
   const c = document.querySelector(`.ator[data-idx="${r.idx}"]`);
   if (c) { c.classList.add("ativo"); c.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+  ativo = r.idx;
   if (r.lat === null) return;
   const m = marcadores[r.idx];
   if (m) {
@@ -721,23 +522,20 @@ function selecionar(r, voar) {
 function desenhaPontos(lista) {
   camadaPontos.clearLayers();
   Object.keys(marcadores).forEach(k => delete marcadores[k]);
+  const varCor = { ciencia_de_dados: "--dados", politicas_publicas: "--politicas", divulgacao_cientifica: "--divulgacao" };
   lista.filter(r => r.lat !== null).forEach(r => {
-    const classe = CLASSE_AREA[r.area_principal] || "dados";
-    const icone = L.divIcon({
-      className: "marcador-leaflet",
-      html: `<span class="marker ${classe}"></span>`,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
-      popupAnchor: [0, -10],
-    });
-    const m = L.marker([r.lat, r.lon], { icon: icone, riseOnHover: true });
+    const m = L.circleMarker([r.lat, r.lon], { radius: 7, color: cor("--surface"), weight: 2, fillColor: cor(varCor[r.area_principal] || "--axis"), fillOpacity: 0.95 });
     const rotulo = document.createElement("div");
     rotulo.appendChild(texto("span", "", (r.sigla ? r.sigla + " · " : "") + r.nome));
     rotulo.appendChild(document.createElement("br"));
-    rotulo.appendChild(texto("span", "sec", r.sigla_instituicao || r.instituicao));
-    m.bindTooltip(rotulo, { direction: "top", offset: [0, -12], opacity: 1 });
-    m.bindPopup(() => conteudoPopup(r), { maxWidth: 320 });
+    const sec = texto("span", "", r.sigla_instituicao || r.instituicao);
+    sec.style.color = cor("--ink-2");
+    rotulo.appendChild(sec);
+    m.bindTooltip(rotulo, { direction: "top", offset: [0, -8], opacity: 1 });
+    m.bindPopup(() => conteudoPopup(r), { maxWidth: 300 });
     m.on("click", () => selecionar(r, false));
+    m.on("mouseover", () => m.setStyle({ radius: 9 }));
+    m.on("mouseout", () => m.setStyle({ radius: 7 }));
     m.addTo(camadaPontos);
     marcadores[r.idx] = m;
   });
@@ -804,7 +602,7 @@ async function carregaTudo(primeira) {
     }
     if (primeira) iniciaMapa();
     desenhaUF();
-    if (primeira) requestAnimationFrame(() => requestAnimationFrame(enquadra));
+    if (primeira) enquadra();
     const regs = await carregaDados();
     const novos = await geocodificaFaltantes(regs);
     afastaCoincidentes(regs);
@@ -817,20 +615,20 @@ async function carregaTudo(primeira) {
     if (novos) {
       const d = document.createElement("div");
       d.appendChild(document.createTextNode(`${novos} linha${novos === 1 ? "" : "s"} da planilha estava${novos === 1 ? "" : "m"} sem coordenada e foi${novos === 1 ? "" : "ram"} posicionada${novos === 1 ? "" : "s"} pelo endereço, com precisão de cidade. Preencha latitude e longitude na planilha para fixar o ponto.`));
-      mostraFaixa(d);
+      mostraFaixa(d, false);
     }
   } catch (erro) {
     const d = document.createElement("div");
     d.appendChild(texto("strong", "", "Não foi possível carregar os dados. "));
     d.appendChild(document.createTextNode(erro.message));
-    mostraFaixa(d);
+    mostraFaixa(d, true);
     el("meta-fonte").textContent = "Falha ao carregar";
   } finally {
     btn.disabled = false;
   }
 }
 
-document.querySelectorAll(".pill[data-area]").forEach(b => b.addEventListener("click", () => {
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
   const on = b.getAttribute("aria-pressed") === "true";
   b.setAttribute("aria-pressed", on ? "false" : "true");
   if (on) estado.areas.delete(b.dataset.area); else estado.areas.add(b.dataset.area);
@@ -843,7 +641,7 @@ el("f-busca").addEventListener("input", e => { estado.busca = e.target.value.tri
 el("f-limpar").addEventListener("click", () => {
   estado.areas = new Set(["ciencia_de_dados", "politicas_publicas", "divulgacao_cientifica"]);
   estado.natureza = estado.regiao = estado.uf = estado.busca = "";
-  document.querySelectorAll(".pill[data-area]").forEach(b => b.setAttribute("aria-pressed", "true"));
+  document.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", "true"));
   el("f-natureza").value = el("f-regiao").value = el("f-uf").value = ""; el("f-busca").value = "";
   atualiza();
   enquadra();
