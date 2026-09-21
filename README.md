@@ -1,8 +1,8 @@
-# Mapa de atores acadêmicos correlatos à CGINA
+# Mapa de centros de pesquisa
 
-Painel geolocalizado de centros, laboratórios, núcleos e institutos brasileiros de referência em ciência de dados, políticas públicas e divulgação científica.
+Painel geolocalizado de centros, laboratórios, núcleos e institutos brasileiros que trabalham com ciência de dados, políticas públicas e divulgação científica.
 
-Coordenação-Geral de Integração Acadêmica e Estudos Avançados (CGINA), Diretoria de Informação Científica e Estudos Avançados (DICE), Coordenação de Aperfeiçoamento de Pessoal de Nível Superior (CAPES).
+Projeto pessoal. Levantamento feito a partir das páginas oficiais das unidades e das universidades, em setembro de 2026.
 
 ## Como o site pega os dados
 
@@ -31,7 +31,7 @@ Uma linha por unidade. As colunas que o site usa:
 | `responsavel_nome`, `responsavel_cargo`, `email_contato`, `telefone_contato`, `url` | Contato mostrado no card. |
 | `cidade`, `uf`, `endereco` | Localização e filtros de região e estado. |
 | `latitude`, `longitude`, `precisao_geo` | Posição no mapa. |
-| `temas_correlatos_cgina` | Texto que aparece quando o card é aberto. |
+| `relevancia` | Texto que aparece quando o card é aberto. |
 | `grau_verificacao` | `parcial` marca a ficha como pendente de confirmação. |
 
 Linha nova sem latitude e longitude, mas com cidade e UF, é posicionada pelo próprio site, com precisão de cidade. Para fixar o ponto num endereço exato, preencha latitude e longitude na planilha.
@@ -45,6 +45,6 @@ A região é derivada da UF, não precisa ser preenchida.
     dados/atores.csv    cópia local, usada quando a planilha não responde
     dados/br_uf.geojson malha das unidades da federação, do IBGE
 
-## Origem dos dados
+## Sobre os dados
 
-Levantamento de setembro de 2026, feito a partir das páginas oficiais das unidades e das universidades. Contatos são apenas os institucionais publicados. Fichas marcadas como verificação parcial precisam de confirmação antes de uso para contato formal.
+Todos os contatos são institucionais e foram copiados das páginas oficiais das próprias unidades. Nenhum endereço de e-mail pessoal e nenhum telefone celular entrou na base. Fichas marcadas como verificação parcial não foram confirmadas na fonte e podem estar desatualizadas.

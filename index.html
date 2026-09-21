@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mapa de Atores CGINA</title>
-<meta name="description" content="Centros, laboratórios e núcleos brasileiros de referência em ciência de dados, políticas públicas e divulgação científica.">
+<title>Mapa de Centros de Pesquisa</title>
+<meta name="description" content="Centros, laboratórios e núcleos de pesquisa brasileiros em ciência de dados, políticas públicas e divulgação científica.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -181,9 +181,9 @@ button, select, input { font: inherit; color: inherit; }
 
 <header class="topo">
   <div>
-    <div class="eyebrow">CAPES, DICE, CGINA</div>
-    <h1>Mapa de atores acadêmicos correlatos à CGINA</h1>
-    <p>Centros, laboratórios, núcleos e institutos de referência em ciência de dados, políticas públicas e divulgação científica, com responsável e contato institucional.</p>
+    <div class="eyebrow">Projeto pessoal</div>
+    <h1>Mapa de centros de pesquisa</h1>
+    <p>Centros, laboratórios, núcleos e institutos brasileiros que trabalham com ciência de dados, políticas públicas e divulgação científica. Cada ficha traz responsável, contato institucional e página oficial.</p>
   </div>
   <div class="meta">
     <span id="meta-fonte">Carregando dados</span>
@@ -230,7 +230,7 @@ button, select, input { font: inherit; color: inherit; }
 </section>
 
 <footer class="rodape">
-  Fontes: páginas oficiais das unidades e das universidades. Contatos são apenas os institucionais publicados. Coordenadas do endereço da unidade quando publicado, senão do campus ou da cidade, conforme o campo de precisão de cada ficha. Malha de estados do <a href="https://servicodados.ibge.gov.br/api/docs/malhas" target="_blank" rel="noopener">IBGE</a>. Unidades com verificação parcial estão marcadas e devem ser confirmadas antes de contato.
+  Levantamento feito a partir das páginas oficiais das unidades e das universidades, em setembro de 2026. Os contatos são apenas os institucionais publicados nessas páginas. As coordenadas vêm do endereço da unidade quando ele é publicado, senão do campus ou da cidade, conforme o campo de precisão de cada ficha. Malha de estados do <a href="https://servicodados.ibge.gov.br/api/docs/malhas" target="_blank" rel="noopener">IBGE</a>. Fichas marcadas como verificação parcial não foram confirmadas na fonte e podem estar desatualizadas.
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -370,7 +370,7 @@ function prepara(brutos) {
       lat: Number.isFinite(lat) ? lat : null,
       lon: Number.isFinite(lon) ? lon : null,
       precisao_geo: (b.precisao_geo || "").toLowerCase(),
-      temas_correlatos_cgina: b.temas_correlatos_cgina || "",
+      relevancia: b.relevancia || "",
       grau_verificacao: (b.grau_verificacao || "").toLowerCase(),
       data_verificacao: b.data_verificacao || "",
     });
@@ -397,10 +397,10 @@ function afastaCoincidentes(regs) {
 
 // ---------- Geocodificação de linhas novas ----------
 function cacheGeo() {
-  try { return JSON.parse(localStorage.getItem("geocache_cgina") || "{}"); } catch (e) { return {}; }
+  try { return JSON.parse(localStorage.getItem("geocache_mapa_centros") || "{}"); } catch (e) { return {}; }
 }
 function gravaCacheGeo(c) {
-  try { localStorage.setItem("geocache_cgina", JSON.stringify(c)); } catch (e) { /* modo privado */ }
+  try { localStorage.setItem("geocache_mapa_centros", JSON.stringify(c)); } catch (e) { /* modo privado */ }
 }
 
 async function geocodificaFaltantes(regs) {
@@ -496,7 +496,7 @@ function cartao(r) {
   if (r.lat === null) tags.appendChild(texto("span", "tag parcial", "sem localização, fora do mapa"));
   else if (r.precisao_geo && r.precisao_geo !== "endereco") tags.appendChild(texto("span", "tag", "posição: " + r.precisao_geo));
   c.appendChild(tags);
-  if (r.temas_correlatos_cgina) c.appendChild(texto("div", "temas", r.temas_correlatos_cgina));
+  if (r.relevancia) c.appendChild(texto("div", "temas", r.relevancia));
   const abrir = () => selecionar(r, true);
   c.addEventListener("click", (ev) => { if (ev.target.tagName !== "A") abrir(); });
   c.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); abrir(); } });
@@ -555,7 +555,7 @@ function passa(r) {
   if (estado.regiao && r.regiao !== estado.regiao) return false;
   if (estado.uf && r.uf !== estado.uf) return false;
   if (estado.busca) {
-    const alvo = normaliza([r.nome, r.sigla, r.instituicao, r.sigla_instituicao, r.cidade, r.temas_correlatos_cgina, r.responsavel_nome, r.tipo_unidade].join(" "));
+    const alvo = normaliza([r.nome, r.sigla, r.instituicao, r.sigla_instituicao, r.cidade, r.relevancia, r.responsavel_nome, r.tipo_unidade].join(" "));
     if (!alvo.includes(normaliza(estado.busca))) return false;
   }
   return true;
